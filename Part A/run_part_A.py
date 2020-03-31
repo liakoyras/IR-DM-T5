@@ -136,7 +136,7 @@ def create_queries(index_dir):
         num+=1
     final = final + ['</parameters>']
 
-    with open('OUTPUT/IndriRunQuery.querries.file.301-450-titles-descs-nars.ERGASIA', 'w') as f:
+    with open('OUTPUT/IndriRunQuery.queries.file.301-450-titles-descs-nars.ERGASIA', 'w') as f:
         for item in final:
             f.write("%s\n" % item)
 
@@ -148,17 +148,32 @@ def run_queries(current_dir,full_adhoc):
         if 'IndriRunQuery' in i:
             filenames.append('OUTPUT/'+i)
 
-    os.system('mkdir Evaluations')        
+    os.system('mkdir Evaluations') 
+
+    print('Found '+str(len(filenames))+' query files!')       
             
     for i in filenames:
-        if ask_Y_N('Do you want to search and evaluate the query file "'+i+'"?') in ['Y','y']:
+        if ask_Y_N('Do you want to run the query file "'+i+'"?') in ['Y','y']:
             print('Searching with and evaluating: '+i.split('.')[-2])
             fname = i.split('.')[-2]+'-results.trec'
             os.system('IndriRunQuery '+i+' > Evaluations/'+ fname)
-            os.system('trec_eval ' + current_dir + '/' + full_adhoc + ' ' + current_dir + '/Evaluations/' + fname + ' > Evaluations/' + fname[:-4] + 'eval')
         else:
-            print('Skipping file: '+i.split('.')[-2])
+            print('Skipping query file: '+i.split('.')[-2])
 
+    filenames = []
+
+    for i in os.listdir('Evaluations'):
+        if 'results.trec' in i:
+            filenames.append('Evaluations/'+i)
+
+    print('Found '+str(len(filenames))+' query results!')
+
+    for i in filenames:
+        if ask_Y_N('Do you want to evaluate the results file "'+i.split('/')[-1]+'"?') in ['Y','y']:
+            print('Evaluating: '+i.split('/')[-1])
+            os.system('trec_eval ' + current_dir + '/' + full_adhoc + ' ' + current_dir + '/'+ i + ' > ' + i[:-4] + 'eval')
+        else:
+            print('Skipping results file: '+i.split('/')[-1])
 #====#
 
 output_folder()
