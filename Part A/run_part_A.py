@@ -91,7 +91,27 @@ def create_queries(index_dir):
             nar[i]=nar[i].replace(j,' ')   
 
     critical_answer = ask_Y_N('Run with RF model?')
-    
+	
+    if critical_answer in ['Y','y']:
+	needed = '<retModel>indri</retModel> <fbDocs>15</fbDocs> <fbTerms>20</fbTerms> <fbMu>0.5</fbMu> <fbOrigWeight>0.5</fbOrigWeight>'
+        for i in os.listdir('.'):
+            if 'IndriRunQuery' in i:	
+                f = open(i, "r")
+                example=f.read().splitlines()
+                for lnum in range(len(example)):
+                    if '<rule>' in example[lnum]:
+                        final = example[:lnum+1]
+                        final = final + [needed]
+                        final = final + example[lnum+2:]
+                        break
+                with open('OUTPUT/'+i, 'w') as f:
+                    for item in final:
+                        f.write("%s\n" % item)
+    else:
+        for i in os.listdir('.'):
+            if 'IndriRunQuery' in i:
+                os.system('cp '+i+' OUTPUT/'+i)
+		
     if critical_answer in ['Y','y']:
         final = ['<parameters>','<index>'+index_dir+'</index>','<retModel>indri</retModel>','<fbDocs>15</fbDocs> <fbTerms>20</fbTerms> <fbMu>0.5</fbMu> <fbOrigWeight>0.5</fbOrigWeight>','<rule>method:dirichlet,mu:1000</rule>','<count>1000</count>','<trecFormat>true</trecFormat>']        
     else:
@@ -123,10 +143,6 @@ def create_queries(index_dir):
             
 def run_queries(current_dir,full_adhoc):
     filenames=[]
-    
-    for i in os.listdir('.'):
-        if 'IndriRunQuery' in i:
-            os.system('cp '+i+' OUTPUT/'+i)
 
     for i in os.listdir('OUTPUT'):
         if 'IndriRunQuery' in i:
@@ -138,8 +154,8 @@ def run_queries(current_dir,full_adhoc):
         if ask_Y_N('Do you want to search and evaluate the query file "'+i+'"?') in ['Y','y']:
             print('Searching with and evaluating: '+i.split('.')[-2])
             fname = i.split('.')[-2]+'-results.trec'
-            os.system('IndriRunQuery '+i+' > OUTPUT/'+ fname)
-            os.system('trec_eval ' + current_dir + '/' + full_adhoc + ' ' + current_dir + '/OUTPUT/' + fname + ' > Evaluations/' + fname[:-4] + 'eval')
+            os.system('IndriRunQuery '+i+' > Evaluations/'+ fname)
+            os.system('trec_eval ' + current_dir + '/' + full_adhoc + ' ' + current_dir + '/Evaluations/' + fname + ' > Evaluations/' + fname[:-4] + 'eval')
         else:
             print('Skipping file: '+i.split('.')[-2])
 
