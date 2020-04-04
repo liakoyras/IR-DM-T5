@@ -2,8 +2,19 @@ import os
 import time
 from collections import Counter
 import nltk
+from nltk.corpus import words
 nltk.download('stopwords')
+nltk.download('words')
 nltk.download('wordnet')
+
+##config-parameters##
+
+query_file_name = 'IndriRunQuerry.queries.file.301-450-titles-descs.ERGASIA'
+results = 'Evaluations/301-450-titles-descs-results.trec'
+fbOrigWeight=0.1
+use_stopwords=True
+
+##-----------------##
 
 def time_extraction(fun,args):
     start = time.time()
@@ -145,21 +156,28 @@ def extract_fb(lines):
     for i in lines:
         if i[4]=='3':
             pid=0
+            do=False
             while True:
+                if len(fid_3)==pid:
+                    do=True
+                    break
                 if int(i.split('-')[1])<fid_3[pid]:
                     pid = pid-1
                     break
                 pid+=1
-            for j in range(len(text_3[pid])):
-                if i in text_3[pid][j]:
-                    p=j-1
-                    temp=[]
-                    while '</DOC>' not in text_3[pid][p]:
-                        temp.append(text_3[pid][p])
-                        p+=1
-                    temp.append('</DOC>')
-                    doc.append(temp)
-                    break
+            if not do:
+                for j in range(len(text_3[pid])):
+                    if i in text_3[pid][j]:
+                        p=j-1
+                        temp=[]
+                        while '</DOC>' not in text_3[pid][p]:
+                            temp.append(text_3[pid][p])
+                            p+=1
+                        temp.append('</DOC>')
+                        doc.append(temp)
+                        break
+            else:
+                doc.append([''])
         else:
             pid=0
             while True:
@@ -180,55 +198,38 @@ def extract_fb(lines):
 
     return doc
 
-query_file_name = raw_input('Enter the relative path/name of the query file to append (For example:\nEvaluations/IndriRunQuery...EXAMPLE): ')
-results = raw_input('Enter the relative path/name of the query results to get the words from: ')
-results = [results]
-filenames = os.listdir('Evaluations/')
-
+#filenames = os.listdir('Evaluations/')
 
 #for i in filenames:
 #    if 'results.trec' in i:
 #        results.append(i)
-        
-r_text = []
 
-for i in results:
-    f = open('Evaluations/'+i, "r")
-    r_text.append(f.read().splitlines())
+f = open(results, "r")
+r_text=f.read().splitlines()
     
-pt = 301
-for k in range(len(r_text)):
-    i = 0
-    split = []
-    lines = r_text[k]
-    for i in range(0, len(lines)):
-        split = split + lines[i].split()
-
-    j = 0
-    i = 0
-    top_15 = []
-    for i in range(2,len(split),6):
-        top_15.append(split[2 + j])
-        j = j + 6
+top_15 = []
+    
+for k in r_text:
+    cline=k.split()
+    top_15.append(cline[0]+' '+cline[2])
         
-    os.system('rm -r Texts')
-    os.system('mkdir Texts')
+os.system('rm -r Texts')
+os.system('mkdir Texts')
 
-    with open('top_15.titles-only.txt', 'w') as f:
-        for item in top_15:
-            f.write("%s\n" % item)
+with open('Texts/top_15.titles-only.txt', 'w') as f:
+    for item in top_15:
+        f.write("%s\n" % item)
 
 filenames = os.listdir('Texts/')
 top = []
 
-for i in filenames:
-    if 'top_15' in i:
-        top.append(i)
+#for i in filenames:
+#    if 'top_15' in i:
+#        top.append(i)
+        
 top = ['top_15.titles-only.txt']
-os.system('rm -r /Texts/sorted')
 
 a=0
-q=0
 print('Exporting texts...')
 for i in top:
     f = open('Texts/'+i, "r")
@@ -240,25 +241,30 @@ for i in top:
     ft_ids = []
     fb_ids = []
     la_ids = []
-    lines = f.read().splitlines()
+    rlines = f.read().splitlines()
     final = []
+
+    lines = []
+    lineID = []
+    for j in rlines:
+        cline=j.split()
+        lines.append(cline[-1])
+        lineID.append(int(cline[0]))
+
     for j in range(len(lines)):
         if 'FR' in lines[j]:
             fr.append(lines[j])
-            fr_ids.append(q)
+            fr_ids.append(lineID[j])
         if 'FT' in lines[j]:
             ft.append(lines[j])
-            ft_ids.append(q)
+            ft_ids.append(lineID[j])
         if 'FBIS' in lines[j]:
             fb.append(lines[j])
-            fb_ids.append(q)
+            fb_ids.append(lineID[j])
         if 'LA' in lines[j]:
             la.append(lines[j])
-            la_ids.append(q)
+            la_ids.append(lineID[j])
         a+=1
-        if a==15:
-            a=0
-            q+=1
     print('Exporting fr...')
     fr = extract_fr(fr)
     print('Exporting ft...')
@@ -267,15 +273,15 @@ for i in top:
     fb = extract_fb(fb)
     print('Exporting latimes...')
     la = extract_la(la)
-    
+
     fr_id = 0
     ft_id = 0
     fb_id = 0
     la_id = 0
     queries = []
-    for j in range(150):
+    for j in range(301,451):
         current = []
-        
+
         if fr_id != len(fr_ids):
             while fr_ids[fr_id]==j:
                 current = current + fr[fr_id]
@@ -288,7 +294,7 @@ for i in top:
                 ft_id+=1
                 if ft_id == len(ft):
                     break
-        if fb_id != len(fb_ids):                
+        if fb_id != len(fb):                
             while fb_ids[fb_id]==j:
                 current = current + fb[fb_id]
                 fb_id+=1
@@ -300,7 +306,7 @@ for i in top:
                 la_id+=1
                 if la_id == len(la_ids):
                     break
-            
+
         queries.append(current)
 
 all_words=[]
@@ -320,6 +326,8 @@ for i in range(len(c_stopwords)):
 
 c_stopwords = set(c_stopwords)
 
+eng_words = words.words()
+
 final_words = []
 final_syn = []
 final_words_enriched = []
@@ -328,15 +336,13 @@ for query in range(len(all_words)):
     temp = []
     for i in all_words[query]:
         word = i[0]
-        tp = True
         for k in ['<','>','/','.',',','"',"'",':',')','(',' ']:
             word = word.replace(k,'')
-        for k in ['DOCID','CELLRULE','RULETABLE','ITAG','newline','TMJ','PJG','=','#','&','*','+','QTAG','PPQ','PPThe','0','1','2','3','4','5','6','7','8','9']:
-            if k in word:
-                tp=False
-                break
-        if word not in stopwords and word not in c_stopwords and len(word)>2 and tp:
+        if not use_stopwords and word not in stopwords and word not in c_stopwords and len(word)>2 and word in eng_words:
             temp.append(word)
+        else:
+            if word in eng_words:
+                temp.append(word)
         if len(temp)==20:
             break
 
@@ -376,19 +382,20 @@ for query in range(len(all_words)):
         f = f + ' ' + i
     final_syn.append(f)
 
-f = open('IndriRunQuery.queries.file.301-450-titles.EXAMPLE', "r")
-query_file_name='IndriRunQuery.queries.file.301-450-titles.EXAMPLE'
+f = open(query_file_name, "r")
 query_file=f.read().splitlines()
 
+import random
+for i in range(len(final_syn)):
+    final_syn[i] = ' '.join(random.sample(final_syn[i].split(),int(len(final_syn[i].split())/2)))
 
 ftemp = []
 for i in query_file:
     ftemp.append(i)
     if '<rule>' in i:
-        ftemp.append('<retModel>indri</retModel> <fbMu>0.0</fbMu> <fbOrigWeight>0.5</fbOrigWeight>')
-
-query_file_syns_only = query_file[:]
+        ftemp.append('<retModel>indri</retModel> <fbMu>0.0</fbMu> <fbOrigWeight>'+str(fbOrigWeight)+'</fbOrigWeight>')
 query_file = ftemp[:]
+query_file_syns_only = ftemp[:]
 query_file_syns = ftemp[:]
 
 query_num = 0

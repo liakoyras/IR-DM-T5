@@ -389,30 +389,17 @@ def build_RF():
                 done = True
                 break
 
-    r_text = []
+    f = open('Evaluations/'+i, "r")
+    r_text=f.read().splitlines()
 
-    for i in results:
-        f = open('Evaluations/'+i, "r")
-        r_text.append(f.read().splitlines())
+    top_15 = []
 
+    for k in r_text:
+        cline=k.split()
+        top_15.append(cline[0]+' '+cline[2])
 
-    pt = 301
-    for k in range(len(r_text)):
-        i = 0
-        split = []
-        lines = r_text[k]
-        for i in range(0, len(lines)):
-            split = split + lines[i].split()
-
-        j = 0
-        i = 0
-        top_15 = []
-        for i in range(2,len(split),6):
-            top_15.append(split[2 + j])
-            j = j + 6
-
-        os.system('rm -r Texts')
-        os.system('mkdir Texts')
+    os.system('rm -r Texts')
+    os.system('mkdir Texts')
 
         with open('Texts/top_15.'+results[k].split('.')[0]+'.txt', 'w') as f:
             for item in top_15:
@@ -427,7 +414,6 @@ def build_RF():
     os.system('rm -r /Texts/sorted')
 
     a=0
-    q=301
     print('Exporting texts...')
     for i in top:
         f = open('Texts/'+i, "r")
@@ -439,25 +425,30 @@ def build_RF():
         ft_ids = []
         fb_ids = []
         la_ids = []
-        lines = f.read().splitlines()
+        rlines = f.read().splitlines()
         final = []
+
+        lines = []
+        lineID = []
+        for j in rlines:
+            cline=j.split()
+            lines.append(cline[-1])
+            lineID.append(int(cline[0]))
+
         for j in range(len(lines)):
             if 'FR' in lines[j]:
                 fr.append(lines[j])
-                fr_ids.append(q-301)
+                fr_ids.append(lineID[j])
             if 'FT' in lines[j]:
                 ft.append(lines[j])
-                ft_ids.append(q-301)
+                ft_ids.append(lineID[j])
             if 'FBIS' in lines[j]:
                 fb.append(lines[j])
-                fb_ids.append(q-301)
+                fb_ids.append(lineID[j])
             if 'LA' in lines[j]:
                 la.append(lines[j])
-                la_ids.append(q-301)
+                la_ids.append(lineID[j])
             a+=1
-            if a==15:
-                a=0
-                q+=1
         print('Exporting fr...')
         fr = extract_fr(fr)
         print('Exporting ft...')
@@ -472,14 +463,14 @@ def build_RF():
         fb_id = 0
         la_id = 0
         queries = []
-        for j in range(150):
+        for j in range(301,451):
             current = []
 
-            if fr_id != len(fr):
+            if fr_id != len(fr_ids):
                 while fr_ids[fr_id]==j:
                     current = current + fr[fr_id]
                     fr_id+=1
-                    if fr_id == len(fr):
+                    if fr_id == len(fr_ids):
                         break
             if ft_id != len(ft):
                 while ft_ids[ft_id]==j:
@@ -487,17 +478,17 @@ def build_RF():
                     ft_id+=1
                     if ft_id == len(ft):
                         break
-            if fb_id != len(fb):                
+            if fb_id != len(fb_ids):                
                 while fb_ids[fb_id]==j:
                     current = current + fb[fb_id]
                     fb_id+=1
-                    if fb_id == len(fb):
+                    if fb_id == len(fb_ids):
                         break
-            if la_id != len(la):               
+            if la_id != len(la_ids):               
                 while la_ids[la_id]==j:
                     current = current + la[la_id]
                     la_id+=1
-                    if la_id == len(la):
+                    if la_id == len(la_ids):
                         break
 
             queries.append(current)
