@@ -11,8 +11,8 @@ nltk.download('wordnet')
 
 query_file_name = 'IndriRunQuerry.queries.file.301-450-titles-descs.ERGASIA'
 results = 'Evaluations/301-450-titles-descs-results.trec'
-fbOrigWeight=0.1
-use_stopwords=True
+fbOrigWeight=0.5
+use_stopwords=False
 
 ##-----------------##
 
@@ -220,12 +220,7 @@ with open('Texts/top_15.titles-only.txt', 'w') as f:
     for item in top_15:
         f.write("%s\n" % item)
 
-filenames = os.listdir('Texts/')
-top = []
-
-#for i in filenames:
-#    if 'top_15' in i:
-#        top.append(i)
+#top = [i for i in os.listdir('Texts/') if 'top_15' in i]
         
 top = ['top_15.titles-only.txt']
 
@@ -338,10 +333,11 @@ for query in range(len(all_words)):
         word = i[0]
         for k in ['<','>','/','.',',','"',"'",':',')','(',' ']:
             word = word.replace(k,'')
-        if not use_stopwords and word not in stopwords and word not in c_stopwords and len(word)>2 and word in eng_words:
-            temp.append(word)
+        if not use_stopwords:
+            if word not in stopwords and word not in c_stopwords and word in eng_words and '_' not in word:
+                temp.append(word)
         else:
-            if word in eng_words:
+            if word in eng_words and '_' not in word:
                 temp.append(word)
         if len(temp)==20:
             break
@@ -351,7 +347,8 @@ for query in range(len(all_words)):
         synonyms = []
         for syn in nltk.corpus.wordnet.synsets(temp[i]):
             for l in syn.lemmas():
-                synonyms.append(l.name())
+                if '_' not in l.name():
+                    synonyms.append(l.name())
         synonyms.append(temp[i])
         synonyms = list(set(synonyms))
         f = f + synonyms
@@ -413,7 +410,7 @@ for i in range(len(query_file_syns)):
 query_num = 0
 for i in range(len(query_file_syns_only)):
     if '<query>' in query_file_syns_only[i]:
-        query_file_syns_only[i] = query_file_syns_only[i][:query_file_syns_only[i].index('<text>')+6]+query_file_syns_only[i][query_file_syns_only[i].index('<text>')+6:query_file_syns_only[i].index('</text>')] + final_syn[query_num] +  query_file_syns_only[i][query_file_syns_only[i].index('</text>'):]
+        query_file_syns_only[i] = query_file_syns_only[i][:query_file_syns_only[i].index('<text>')+6]+query_file_syns_only[i][query_file_syns_only[i].index('<text>')+6:query_file_syns_only[i].index('</text>')] + ' ' + final_syn[query_num] +  query_file_syns_only[i][query_file_syns_only[i].index('</text>'):]
         query_num+=1        
 
 with open(query_file_name.split('/')[-1].replace('.ERGASIA','-RF.ERGASIA').replace('.EXAMPLE','-RF.EXAMPLE'), 'w') as f:
@@ -427,3 +424,4 @@ with open(query_file_name.split('/')[-1].replace('.ERGASIA','-RF-SYN.ERGASIA').r
 with open(query_file_name.split('/')[-1].replace('.ERGASIA','-ONLY-SYN.ERGASIA').replace('.EXAMPLE','-ONLY-SYN.EXAMPLE'), 'w') as f:
     for item in query_file_syns_only:
         f.write("%s\n" % item)
+
